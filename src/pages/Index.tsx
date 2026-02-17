@@ -5,7 +5,10 @@ import Scoreboard from "@/components/Scoreboard";
 
 const games = [
   { path: "/break-the-ice", icon: "❄️", title: "Break the Ice", desc: "Shatter ice cubes to reveal questions!", color: "cyan" as const },
-  { path: "/puzzle", icon: "🧩", title: "AI Puzzle", desc: "Flip puzzle pieces & answer to reveal the image!", color: "magenta" as const },
+  { path: "/puzzle/0", icon: "🧠", title: "AI Puzzle: First AI", desc: "Guess the first-ever AI program!", color: "magenta" as const },
+  { path: "/puzzle/1", icon: "🌐", title: "AI Puzzle: Social Media", desc: "Guess the first social media giant!", color: "magenta" as const },
+  { path: "/puzzle/2", icon: "💬", title: "AI Puzzle: Top App", desc: "Guess the most used Play Store app!", color: "magenta" as const },
+  { path: "/puzzle/3", icon: "🤖", title: "AI Puzzle: Top AI App", desc: "Guess the most used AI application!", color: "magenta" as const },
   { path: "/quiz-wheel", icon: "🎡", title: "AI Quiz Wheel", desc: "Spin the wheel & test your AI knowledge!", color: "lime" as const },
   { path: "/match", icon: "🔗", title: "Match the Logic", desc: "Connect AI terms with their definitions!", color: "amber" as const },
 ];
@@ -52,7 +55,7 @@ const Index = () => {
         <Scoreboard />
       </motion.div>
 
-      <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {games.map((game, i) => (
           <motion.button
             key={game.path}
