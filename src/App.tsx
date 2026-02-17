@@ -24,7 +24,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/break-the-ice" element={<BreakTheIce />} />
-            <Route path="/puzzle" element={<AIPuzzle />} />
+            <Route path="/puzzle/:roundId" element={<AIPuzzle />} />
             <Route path="/quiz-wheel" element={<AIQuizWheel />} />
             <Route path="/match" element={<MatchTheLogic />} />
             <Route path="/final" element={<FinalScoreboard />} />

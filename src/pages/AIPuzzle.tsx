@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import GameLayout from "@/components/GameLayout";
 import { useScore, TEAMS, type TeamName } from "@/contexts/ScoreContext";
@@ -78,7 +79,9 @@ const MAX_BLOCKS = 4;
 
 const AIPuzzle = () => {
   const { addScore } = useScore();
-  const [currentRound, setCurrentRound] = useState(0);
+  const { roundId } = useParams();
+  const navigate = useNavigate();
+  const currentRound = Math.min(Number(roundId) || 0, rounds.length - 1);
   const [removedBlocks, setRemovedBlocks] = useState<number[]>([]);
   const [revealed, setRevealed] = useState(false);
   const [showTeamSelect, setShowTeamSelect] = useState(false);
@@ -113,13 +116,8 @@ const AIPuzzle = () => {
     setRoundComplete(true);
   };
 
-  const handleNextRound = () => {
-    const next = (currentRound + 1) % rounds.length;
-    setCurrentRound(next);
-    setRemovedBlocks([]);
-    setRevealed(false);
-    setShowTeamSelect(false);
-    setRoundComplete(false);
+  const handleBackToHome = () => {
+    navigate("/");
   };
 
   return (
@@ -171,7 +169,7 @@ const AIPuzzle = () => {
 
           {/* Round info */}
           <div className="mt-4 text-center font-body text-lg text-muted-foreground">
-            Round {currentRound + 1} / {rounds.length}
+            {round.answer.split("(")[0].trim()}
           </div>
         </div>
 
@@ -241,10 +239,10 @@ const AIPuzzle = () => {
             )}
             {roundComplete && (
               <button
-                onClick={handleNextRound}
+                onClick={handleBackToHome}
                 className="w-full rounded-xl border-2 border-primary/50 bg-primary/10 py-4 font-display text-xl font-bold text-primary transition-all hover:bg-primary/20 hover:shadow-[0_0_20px_hsl(185_100%_50%/0.3)]"
               >
-                ➡️ Next Round
+                🏠 Back to Home
               </button>
             )}
           </div>
