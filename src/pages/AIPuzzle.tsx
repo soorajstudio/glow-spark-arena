@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import GameLayout from "@/components/GameLayout";
 import { useScore, TEAMS, type TeamName } from "@/contexts/ScoreContext";
-import { Bot, Brain, Cpu, Eye, MessageSquare, Sparkles, Lightbulb, Globe, Shield } from "lucide-react";
+import { Bot, Brain, Globe, MessageSquare } from "lucide-react";
 
 interface PuzzleRound {
   icon: React.ReactNode;
@@ -12,138 +12,63 @@ interface PuzzleRound {
 
 const rounds: PuzzleRound[] = [
   {
-    icon: <MessageSquare className="h-full w-full text-primary" />,
-    answer: "ChatGPT",
+    icon: <Brain className="h-full w-full text-primary" />,
+    answer: "ELIZA (First AI Program)",
     clues: [
-      "I am a text-based model.",
+      "I was created in the 1960s at MIT.",
+      "I could simulate a psychotherapist.",
+      "I used simple pattern matching.",
+      "My creator was Joseph Weizenbaum.",
+      "I am considered the first chatbot ever.",
+      "I ran on mainframe computers.",
+      "People thought I truly understood them.",
+      "I paved the way for modern AI assistants.",
+      "My name comes from a character in Pygmalion.",
+    ],
+  },
+  {
+    icon: <Globe className="h-full w-full text-secondary" />,
+    answer: "Facebook (First Social Media to 1B Users)",
+    clues: [
+      "I was launched from a college dorm room.",
+      "I started as a platform for university students.",
+      "My founder became the youngest billionaire.",
+      "I was the first social network to reach 1 billion users.",
+      "I changed my parent company name to Meta.",
+      "I introduced the 'Like' button to the world.",
+      "I connect over 3 billion people worldwide.",
+      "I started in 2004 at Harvard University.",
+      "My iconic color is blue.",
+    ],
+  },
+  {
+    icon: <MessageSquare className="h-full w-full text-neon-lime" />,
+    answer: "WhatsApp (Most Used App on Play Store)",
+    clues: [
+      "I am a messaging application.",
+      "I was acquired by Facebook for $19 billion.",
+      "I use end-to-end encryption.",
+      "I have over 2 billion users worldwide.",
+      "I support voice and video calls.",
+      "My icon is a green speech bubble with a phone.",
+      "I was founded by ex-Yahoo employees.",
+      "I replaced SMS for many people.",
+      "I am the most downloaded app on Google Play Store.",
+    ],
+  },
+  {
+    icon: <Bot className="h-full w-full text-neon-amber" />,
+    answer: "ChatGPT (Most Used AI Application)",
+    clues: [
+      "I reached 100 million users in 2 months.",
       "I was created by OpenAI.",
       "I can write essays, code, and poems.",
+      "I launched in November 2022.",
       "My name includes the word 'Chat'.",
       "I use the Transformer architecture.",
-      "I learn from massive datasets of text.",
-      "Millions of people use me daily.",
-      "I launched in November 2022.",
+      "I broke the record for fastest-growing app.",
       "I can hold multi-turn conversations.",
-    ],
-  },
-  {
-    icon: <Brain className="h-full w-full text-secondary" />,
-    answer: "Neural Network",
-    clues: [
-      "I am inspired by the human brain.",
-      "I have layers of connected nodes.",
-      "I learn by adjusting weights.",
-      "I power most modern AI systems.",
-      "I can recognize images and speech.",
-      "My layers include input, hidden, and output.",
-      "Deep Learning uses many of my layers.",
-      "I was first theorized in the 1940s.",
-      "I need large amounts of data to train.",
-    ],
-  },
-  {
-    icon: <Eye className="h-full w-full text-neon-lime" />,
-    answer: "Computer Vision",
-    clues: [
-      "I help machines understand images.",
-      "I am used in self-driving cars.",
-      "I can detect faces and objects.",
-      "I process pixels as my input.",
-      "Medical imaging relies on me.",
-      "I use convolutional neural networks.",
-      "I can read text from photos (OCR).",
-      "Security cameras use me for surveillance.",
-      "I can generate image descriptions.",
-    ],
-  },
-  {
-    icon: <Shield className="h-full w-full text-neon-amber" />,
-    answer: "Responsible AI",
-    clues: [
-      "I focus on fairness and ethics.",
-      "I aim to reduce bias in AI systems.",
-      "Transparency is one of my core principles.",
-      "I ensure AI respects user privacy.",
-      "I promote accountability in AI development.",
-      "I consider the impact on all communities.",
-      "Governments are creating regulations around me.",
-      "I advocate for explainable decisions.",
-      "I am essential for building trust in AI.",
-    ],
-  },
-  {
-    icon: <Sparkles className="h-full w-full text-secondary" />,
-    answer: "Generative AI",
-    clues: [
-      "I can create new content from scratch.",
-      "I power tools like DALL·E and Midjourney.",
-      "I can generate text, images, and music.",
-      "I learn patterns from training data.",
-      "Prompt engineering improves my output.",
-      "I use models like GANs and Diffusion.",
-      "I raise concerns about deepfakes.",
-      "I am transforming creative industries.",
-      "My outputs can be hard to distinguish from human work.",
-    ],
-  },
-  {
-    icon: <Bot className="h-full w-full text-primary" />,
-    answer: "AI Chatbot",
-    clues: [
-      "I simulate human conversation.",
-      "Customer service websites use me.",
-      "I can answer FAQs automatically.",
-      "I use Natural Language Processing.",
-      "I can be rule-based or AI-powered.",
-      "Virtual assistants are a form of me.",
-      "I operate 24/7 without breaks.",
-      "I improve with more training data.",
-      "Siri and Alexa are examples of me.",
-    ],
-  },
-  {
-    icon: <Lightbulb className="h-full w-full text-neon-amber" />,
-    answer: "Prompt Engineering",
-    clues: [
-      "I am the art of asking AI the right way.",
-      "Better instructions lead to better results.",
-      "I use techniques like few-shot examples.",
-      "Context and clarity are my best friends.",
-      "I help reduce AI hallucinations.",
-      "I am a growing career skill in tech.",
-      "Chain-of-thought is one of my techniques.",
-      "I work with Large Language Models.",
-      "The quality of output depends on me.",
-    ],
-  },
-  {
-    icon: <Globe className="h-full w-full text-neon-lime" />,
-    answer: "AI in Real Life",
-    clues: [
-      "I recommend what you watch on Netflix.",
-      "I help doctors diagnose diseases faster.",
-      "I power spam filters in your email.",
-      "Navigation apps use me for traffic prediction.",
-      "I translate languages in real-time.",
-      "I help farmers monitor crop health.",
-      "Banks use me to detect fraud.",
-      "I personalize your social media feed.",
-      "I am everywhere, often invisible.",
-    ],
-  },
-  {
-    icon: <Cpu className="h-full w-full text-primary" />,
-    answer: "Machine Learning",
-    clues: [
-      "I am a subset of Artificial Intelligence.",
-      "I learn from data, not explicit rules.",
-      "I improve my accuracy over time.",
-      "I use algorithms like decision trees.",
-      "Supervised and unsupervised are my types.",
-      "I need training data and test data.",
-      "I can predict outcomes based on patterns.",
-      "I power recommendation engines.",
-      "I was coined as a term in 1959.",
+      "I am the most widely used AI application today.",
     ],
   },
 ];
@@ -224,21 +149,21 @@ const AIPuzzle = () => {
               {Array.from({ length: 9 }).map((_, i) => {
                 const isRemoved = removedBlocks.includes(i) || revealed;
                 return (
-                  <AnimatePresence key={i}>
-                    {!isRemoved && (
-                      <motion.button
-                        className="flex items-center justify-center rounded-lg border border-neon-magenta/40 bg-muted font-display text-2xl font-bold text-neon-magenta transition-colors hover:bg-neon-magenta/20"
-                        onClick={() => handleBlockClick(i)}
-                        initial={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.3, transition: { duration: 0.4 } }}
-                        whileHover={!revealed && !roundComplete ? { scale: 1.05 } : {}}
-                        whileTap={!revealed && !roundComplete ? { scale: 0.95 } : {}}
-                        layout
-                      >
-                        {i + 1}
-                      </motion.button>
-                    )}
-                  </AnimatePresence>
+                  <div key={i} className="relative">
+                    <AnimatePresence>
+                      {!isRemoved && (
+                        <motion.button
+                          className="absolute inset-0 flex items-center justify-center rounded-lg border border-neon-magenta/40 bg-muted font-display text-2xl font-bold text-neon-magenta"
+                          onClick={() => handleBlockClick(i)}
+                          initial={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0, rotate: 45, transition: { duration: 0.5 } }}
+                          whileTap={!revealed && !roundComplete ? { scale: 0.95 } : {}}
+                        >
+                          {i + 1}
+                        </motion.button>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 );
               })}
             </div>
