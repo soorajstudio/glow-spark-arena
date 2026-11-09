@@ -2,288 +2,349 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import GameLayout from "@/components/GameLayout";
-import { useScore, TEAMS, type TeamName } from "@/contexts/ScoreContext";
-import { Bot, Brain, Globe, MessageSquare } from "lucide-react";
-
-interface PuzzleRound {
-  icon: React.ReactNode;
-  answer: string;
-  clues: string[];
-}
-
-const rounds: PuzzleRound[] = [
-  {
-    icon: <Brain className="h-full w-full text-primary" />,
-    answer: "ELIZA (First AI Program)",
-    clues: [
-      "I was created in the 1960s at MIT.",
-      "I could simulate a psychotherapist.",
-      "I used simple pattern matching.",
-      "My creator was Joseph Weizenbaum.",
-      "I am considered the first chatbot ever.",
-      "I ran on mainframe computers.",
-      "People thought I truly understood them.",
-      "I paved the way for modern AI assistants.",
-      "My name comes from a character in Pygmalion.",
-    ],
-  },
-  {
-    icon: <Globe className="h-full w-full text-secondary" />,
-    answer: "Facebook (First Social Media to 1B Users)",
-    clues: [
-      "I was launched from a college dorm room.",
-      "I started as a platform for university students.",
-      "My founder became the youngest billionaire.",
-      "I was the first social network to reach 1 billion users.",
-      "I changed my parent company name to Meta.",
-      "I introduced the 'Like' button to the world.",
-      "I connect over 3 billion people worldwide.",
-      "I started in 2004 at Harvard University.",
-      "My iconic color is blue.",
-    ],
-  },
-  {
-    icon: <MessageSquare className="h-full w-full text-neon-lime" />,
-    answer: "WhatsApp (Most Used App on Play Store)",
-    clues: [
-      "I am a messaging application.",
-      "I was acquired by Facebook for $19 billion.",
-      "I use end-to-end encryption.",
-      "I have over 2 billion users worldwide.",
-      "I support voice and video calls.",
-      "My icon is a green speech bubble with a phone.",
-      "I was founded by ex-Yahoo employees.",
-      "I replaced SMS for many people.",
-      "I am the most downloaded app on Google Play Store.",
-    ],
-  },
-  {
-    icon: <Bot className="h-full w-full text-neon-amber" />,
-    answer: "ChatGPT (Most Used AI Application)",
-    clues: [
-      "I reached 100 million users in 2 months.",
-      "I was created by OpenAI.",
-      "I can write essays, code, and poems.",
-      "I launched in November 2022.",
-      "My name includes the word 'Chat'.",
-      "I use the Transformer architecture.",
-      "I broke the record for fastest-growing app.",
-      "I can hold multi-turn conversations.",
-      "I am the most widely used AI application today.",
-    ],
-  },
-];
+import { useEvent, type Team } from "@/contexts/EventContext";
+import {
+  Brain,
+  Globe,
+  MessageSquare,
+  Bot,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Award,
+  Sparkles,
+  HelpCircle,
+} from "lucide-react";
+import { sound } from "@/lib/sound";
 
 const POINTS_MAP: Record<number, number> = { 1: 15, 2: 10, 3: 5, 4: 2 };
 const MAX_BLOCKS = 4;
 
-const AIPuzzle = () => {
-  const { addScore } = useScore();
+export const AIPuzzle = () => {
+  const { eventData, addScore } = useEvent();
   const { roundId } = useParams();
   const navigate = useNavigate();
-  const currentRound = Math.min(Number(roundId) || 0, rounds.length - 1);
+
+  const puzzles = eventData.puzzles;
+  const currentRoundIndex = Math.max(
+    0,
+    Math.min(Number(roundId) || 0, puzzles.length - 1)
+  );
+  const round = puzzles[currentRoundIndex] || puzzles[0];
+
   const [removedBlocks, setRemovedBlocks] = useState<number[]>([]);
   const [revealed, setRevealed] = useState(false);
   const [showTeamSelect, setShowTeamSelect] = useState(false);
   const [roundComplete, setRoundComplete] = useState(false);
 
-  const round = rounds[currentRound];
   const blocksRevealed = removedBlocks.length;
   const currentPoints = POINTS_MAP[blocksRevealed] ?? 2;
 
   const handleBlockClick = (idx: number) => {
     if (removedBlocks.includes(idx) || revealed || roundComplete) return;
+    sound.playReveal();
     const next = [...removedBlocks, idx];
     setRemovedBlocks(next);
     if (next.length >= MAX_BLOCKS) {
-      setRevealed(true);
+      // Once 4 blocks are opened, automatically reveal the rest if desired or keep going
     }
   };
 
-  const handleGuess = () => {
-    setShowTeamSelect(true);
-  };
-
-  const handleAwardPoints = (team: TeamName) => {
-    addScore(team, "Puzzle", currentPoints);
+  const handleAwardPoints = (team: Team) => {
+    sound.playCorrect();
+    addScore(team.id, "Puzzle", currentPoints, `Solved: ${round.answer}`);
     setShowTeamSelect(false);
     setRevealed(true);
     setRoundComplete(true);
   };
 
   const handleShowAnswer = () => {
+    sound.playVictory();
     setRevealed(true);
     setRoundComplete(true);
   };
 
-  const handleBackToHome = () => {
-    navigate("/");
+  const switchRound = (newIndex: number) => {
+    sound.playClick();
+    setRemovedBlocks([]);
+    setRevealed(false);
+    setShowTeamSelect(false);
+    setRoundComplete(false);
+    navigate(`/puzzle/${newIndex}`);
+  };
+
+  // Render icon fallback if no image
+  const renderFallbackIcon = () => {
+    switch (round.iconName) {
+      case "Globe":
+        return <Globe className="h-full w-full text-secondary" />;
+      case "MessageSquare":
+        return <MessageSquare className="h-full w-full text-neon-lime" />;
+      case "Bot":
+        return <Bot className="h-full w-full text-neon-amber" />;
+      default:
+        return <Brain className="h-full w-full text-primary" />;
+    }
   };
 
   return (
-    <GameLayout title="AI Puzzle" icon="🧩">
-      <div className="mx-auto mt-4 flex max-w-6xl flex-col gap-6 lg:flex-row">
-        {/* Left: Icon Grid */}
-        <div className="flex-1">
-          <div className="relative mx-auto aspect-square w-full max-w-md overflow-hidden rounded-2xl border border-primary/30 bg-card box-glow-cyan">
-            {/* Hidden Icon underneath */}
-            <div className="absolute inset-0 flex items-center justify-center p-16">
-              {round.icon}
-            </div>
-            {/* Answer label shown when revealed */}
-            <AnimatePresence>
-              {revealed && (
-                <motion.div
-                  className="absolute inset-x-0 bottom-0 bg-card/90 py-3 text-center font-display text-2xl font-bold text-primary text-glow-cyan backdrop-blur-sm"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                >
-                  {round.answer}
-                </motion.div>
-              )}
-            </AnimatePresence>
-            {/* 3x3 Grid of blocks */}
-            <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 gap-1 p-1">
-              {Array.from({ length: 9 }).map((_, i) => {
-                const isRemoved = removedBlocks.includes(i) || revealed;
-                return (
-                  <div key={i} className="relative">
-                    <AnimatePresence>
-                      {!isRemoved && (
-                        <motion.button
-                          className="absolute inset-0 flex items-center justify-center rounded-lg border border-neon-magenta/40 bg-muted font-display text-2xl font-bold text-neon-magenta"
-                          onClick={() => handleBlockClick(i)}
-                          initial={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0, rotate: 45, transition: { duration: 0.5 } }}
-                          whileTap={!revealed && !roundComplete ? { scale: 0.95 } : {}}
-                        >
-                          {i + 1}
-                        </motion.button>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                );
-              })}
-            </div>
+    <GameLayout
+      title="AI Mystery Puzzle"
+      icon="🧩"
+      subtitle={`Round ${currentRoundIndex + 1} of ${puzzles.length}: ${round.title}`}
+    >
+      <div className="mx-auto max-w-6xl">
+        {/* Round Switcher Header */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-border/80 pb-4">
+          <div className="flex items-center gap-2">
+            <span className="rounded-lg bg-neon-magenta/20 px-3 py-1 font-display text-xs font-bold text-neon-magenta">
+              PUZZLE STAGE
+            </span>
+            <span className="font-display text-base font-bold text-foreground">
+              {round.title}
+            </span>
           </div>
 
-          {/* Round info */}
-          <div className="mt-4 text-center font-body text-lg text-muted-foreground">
-            {round.answer.split("(")[0].trim()}
+          <div className="flex items-center gap-2">
+            <button
+              disabled={currentRoundIndex === 0}
+              onClick={() => switchRound(currentRoundIndex - 1)}
+              className="flex items-center gap-1 rounded-xl border border-border bg-card/60 px-3 py-1.5 font-display text-xs font-semibold text-muted-foreground hover:bg-card hover:text-foreground disabled:opacity-40"
+            >
+              <ChevronLeft size={16} /> Prev Round
+            </button>
+            <span className="font-display text-xs font-bold text-primary">
+              {currentRoundIndex + 1} / {puzzles.length}
+            </span>
+            <button
+              disabled={currentRoundIndex >= puzzles.length - 1}
+              onClick={() => switchRound(currentRoundIndex + 1)}
+              className="flex items-center gap-1 rounded-xl border border-border bg-card/60 px-3 py-1.5 font-display text-xs font-semibold text-muted-foreground hover:bg-card hover:text-foreground disabled:opacity-40"
+            >
+              Next Round <ChevronRight size={16} />
+            </button>
           </div>
         </div>
 
-        {/* Right: Clue Log & Controls */}
-        <div className="flex w-full flex-col gap-4 lg:w-80">
-          {/* Clue Log */}
-          <div className="rounded-xl border border-primary/30 bg-card p-5 box-glow-cyan">
-            <h3 className="mb-3 font-display text-xl font-bold text-primary text-glow-cyan">
-              📋 Clue Log
-            </h3>
-            <div className="min-h-[120px] space-y-2">
+        {/* Main Stage Grid */}
+        <div className="flex flex-col gap-8 lg:flex-row items-start">
+          {/* Left: 3x3 Tile Grid */}
+          <div className="flex-1 w-full max-w-md mx-auto">
+            <div className="relative aspect-square w-full overflow-hidden rounded-3xl border-2 border-primary/40 bg-card shadow-2xl box-glow-cyan">
+              {/* Revealed Visual (Image or Icon) */}
+              <div className="absolute inset-0 flex items-center justify-center p-8 bg-black/40">
+                {round.imageUrl ? (
+                  <img
+                    src={round.imageUrl}
+                    alt="Mystery Subject"
+                    className="h-full w-full object-contain rounded-2xl"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                ) : (
+                  <div className="p-12 h-full w-full flex items-center justify-center">
+                    {renderFallbackIcon()}
+                  </div>
+                )}
+              </div>
+
+              {/* Secret Answer Banner */}
               <AnimatePresence>
-                {removedBlocks.map((blockIdx, order) => (
+                {revealed && (
                   <motion.div
-                    key={`${currentRound}-${blockIdx}`}
-                    className="rounded-lg border border-neon-lime/30 bg-neon-lime/10 px-4 py-2 font-body text-base text-neon-lime"
-                    initial={{ opacity: 0, x: 30 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.1 }}
+                    className="absolute inset-x-0 bottom-0 z-20 border-t border-primary/40 bg-card/95 py-4 px-4 text-center backdrop-blur-md"
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
                   >
-                    {round.clues[blockIdx]}
+                    <div className="text-xs font-bold uppercase tracking-widest text-primary">
+                      Identity Revealed
+                    </div>
+                    <div className="font-display text-2xl font-black text-neon-lime text-glow-lime">
+                      {round.answer}
+                    </div>
                   </motion.div>
-                ))}
+                )}
               </AnimatePresence>
-              {blocksRevealed === 0 && !revealed && (
-                <p className="font-body text-base text-muted-foreground italic">
-                  Click blocks to reveal clues...
-                </p>
-              )}
+
+              {/* 3x3 Covering Tiles */}
+              <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 gap-1.5 p-2 z-10">
+                {Array.from({ length: 9 }).map((_, i) => {
+                  const isRemoved = removedBlocks.includes(i) || revealed;
+                  return (
+                    <div key={i} className="relative">
+                      <AnimatePresence>
+                        {!isRemoved && (
+                          <motion.button
+                            onClick={() => handleBlockClick(i)}
+                            className="absolute inset-0 flex items-center justify-center rounded-2xl border-2 border-neon-magenta/50 bg-gradient-to-br from-card to-muted font-display text-3xl font-black text-neon-magenta shadow-lg hover:border-neon-magenta hover:bg-neon-magenta/10"
+                            initial={{ opacity: 1, scale: 1 }}
+                            exit={{
+                              opacity: 0,
+                              scale: 0.1,
+                              rotate: 90,
+                              transition: { duration: 0.4 },
+                            }}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            {i + 1}
+                          </motion.button>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
+
+            <p className="mt-3 text-center font-display text-xs text-muted-foreground uppercase tracking-widest">
+              Click any tile number to expose a progressive deduction clue
+            </p>
           </div>
 
-          {/* Points indicator */}
-          {!roundComplete && blocksRevealed > 0 && (
-            <motion.div
-              className="rounded-xl border border-neon-amber/40 bg-neon-amber/10 p-4 text-center"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              key={blocksRevealed}
-            >
-              <p className="font-body text-base text-neon-amber">
-                Blocks revealed: {blocksRevealed} / {MAX_BLOCKS}
-              </p>
-              <p className="font-display text-3xl font-bold text-neon-amber text-glow-amber">
-                +{currentPoints} pts
-              </p>
-            </motion.div>
-          )}
+          {/* Right: Clue Log & Scoring Controls */}
+          <div className="flex w-full flex-1 flex-col gap-5">
+            {/* Clue Log Container */}
+            <div className="rounded-2xl border border-primary/30 bg-card/75 p-6 backdrop-blur-xl shadow-xl box-glow-cyan">
+              <div className="mb-4 flex items-center justify-between border-b border-border/80 pb-3">
+                <h3 className="font-display text-lg font-bold text-primary text-glow-cyan flex items-center gap-2">
+                  <Sparkles size={18} /> Exposed Clue Feed
+                </h3>
+                <span className="font-display text-xs font-bold text-muted-foreground">
+                  {blocksRevealed} / 9 Tiles Open
+                </span>
+              </div>
 
-          {/* Controls */}
-          <div className="flex flex-col gap-3">
-            {!roundComplete && !revealed && blocksRevealed > 0 && (
-              <button
-                onClick={handleGuess}
-                className="w-full rounded-xl border-2 border-neon-lime/50 bg-neon-lime/10 py-4 font-display text-xl font-bold text-neon-lime transition-all hover:bg-neon-lime/20 hover:shadow-[0_0_20px_hsl(130_100%_50%/0.3)]"
+              <div className="min-h-[160px] space-y-2.5 max-h-80 overflow-y-auto pr-1">
+                <AnimatePresence>
+                  {removedBlocks.map((blockIdx) => (
+                    <motion.div
+                      key={`clue-${blockIdx}`}
+                      className="flex items-start gap-2.5 rounded-xl border border-neon-lime/40 bg-neon-lime/10 p-3 text-sm font-medium text-neon-lime shadow-sm"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-neon-lime/20 font-display text-xs font-bold">
+                        {blockIdx + 1}
+                      </span>
+                      <span className="font-body text-sm leading-relaxed text-foreground">
+                        {round.clues[blockIdx]}
+                      </span>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+
+                {blocksRevealed === 0 && !revealed && (
+                  <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground">
+                    <HelpCircle size={32} className="mb-2 opacity-40" />
+                    <p className="font-display text-sm font-semibold">No clues revealed yet</p>
+                    <p className="text-xs">Click tiles on the left board to open deductions.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Points Bounty Tracker */}
+            {!roundComplete && blocksRevealed > 0 && (
+              <motion.div
+                key={blocksRevealed}
+                className="flex items-center justify-between rounded-2xl border border-neon-amber/50 bg-neon-amber/10 px-6 py-4 backdrop-blur-md shadow-lg"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
               >
-                🎯 Guess Answer (+{currentPoints})
-              </button>
+                <div>
+                  <span className="font-display text-xs font-bold uppercase tracking-wider text-neon-amber">
+                    Active Bounty Value
+                  </span>
+                  <div className="text-xs text-muted-foreground">
+                    Speed deduction bonus active
+                  </div>
+                </div>
+                <div className="font-display text-3xl font-black text-neon-amber text-glow-amber">
+                  +{currentPoints} pts
+                </div>
+              </motion.div>
             )}
-            {!roundComplete && !revealed && (
-              <button
-                onClick={handleShowAnswer}
-                className="w-full rounded-xl border-2 border-muted-foreground/30 bg-muted py-3 font-display text-lg font-bold text-muted-foreground transition-all hover:bg-muted-foreground/20"
-              >
-                👁 Show Answer
-              </button>
-            )}
-            {roundComplete && (
-              <button
-                onClick={handleBackToHome}
-                className="w-full rounded-xl border-2 border-primary/50 bg-primary/10 py-4 font-display text-xl font-bold text-primary transition-all hover:bg-primary/20 hover:shadow-[0_0_20px_hsl(185_100%_50%/0.3)]"
-              >
-                🏠 Back to Home
-              </button>
-            )}
+
+            {/* Decision Controls */}
+            <div className="flex flex-col gap-3">
+              {!roundComplete && !revealed && (
+                <button
+                  onClick={() => {
+                    sound.playClick();
+                    setShowTeamSelect(true);
+                  }}
+                  className="flex items-center justify-center gap-2 rounded-2xl border-2 border-neon-lime/60 bg-neon-lime/20 py-4 font-display text-xl font-black text-neon-lime transition-all hover:bg-neon-lime/30 hover:shadow-[0_0_20px_hsl(130_100%_50%/0.35)]"
+                >
+                  <Award size={22} />
+                  Award Correct Guess (+{currentPoints} pts)
+                </button>
+              )}
+
+              {!roundComplete && !revealed && (
+                <button
+                  onClick={handleShowAnswer}
+                  className="flex items-center justify-center gap-2 rounded-2xl border border-border bg-muted/60 py-3.5 font-display text-sm font-bold text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+                >
+                  <Eye size={18} /> Reveal Identity & Full Image
+                </button>
+              )}
+
+              {roundComplete && currentRoundIndex < puzzles.length - 1 && (
+                <button
+                  onClick={() => switchRound(currentRoundIndex + 1)}
+                  className="flex items-center justify-center gap-2 rounded-2xl border-2 border-primary/60 bg-primary/20 py-4 font-display text-lg font-black text-primary transition-all hover:bg-primary/30 hover:shadow-[0_0_20px_hsl(185_100%_50%/0.4)]"
+                >
+                  Advance to Next Puzzle Round <ChevronRight size={20} />
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Team select modal */}
+      {/* Team Select Award Modal */}
       <AnimatePresence>
         {showTeamSelect && (
           <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-background/85 p-4 backdrop-blur-md"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
             <motion.div
-              className="w-full max-w-lg rounded-xl border border-primary/30 bg-card p-8 box-glow-cyan"
-              initial={{ scale: 0.8, opacity: 0 }}
+              className="relative w-full max-w-lg rounded-2xl border border-primary/40 bg-card p-6 md:p-8 shadow-2xl box-glow-cyan"
+              initial={{ scale: 0.85, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
+              exit={{ scale: 0.85, opacity: 0 }}
             >
-              <h2 className="mb-2 text-center font-display text-3xl font-bold text-primary text-glow-cyan">
+              <h2 className="mb-1 text-center font-display text-2xl font-bold text-primary text-glow-cyan">
                 Award +{currentPoints} Points
               </h2>
-              <p className="mb-6 text-center font-body text-lg text-muted-foreground">
-                Select the team that answered correctly
+              <p className="mb-6 text-center font-body text-sm text-muted-foreground">
+                Select the team that buzzed and guessed correctly:
               </p>
-              <div className="grid grid-cols-2 gap-4">
-                {TEAMS.map((team) => (
+
+              <div className="grid grid-cols-2 gap-3.5">
+                {eventData.teams.map((team) => (
                   <button
-                    key={team}
+                    key={team.id}
                     onClick={() => handleAwardPoints(team)}
-                    className="rounded-xl border-2 border-neon-lime/40 bg-neon-lime/10 py-5 font-display text-xl font-bold text-neon-lime transition-all hover:bg-neon-lime/20 hover:shadow-[0_0_20px_hsl(130_100%_50%/0.3)]"
+                    className="flex flex-col items-center justify-center rounded-2xl border-2 border-neon-lime/40 bg-neon-lime/10 p-4 transition-all hover:bg-neon-lime/25 hover:scale-105"
                   >
-                    {team}
+                    <span className="text-3xl mb-1">{team.avatar}</span>
+                    <span className="font-display text-sm font-bold text-foreground">
+                      {team.name}
+                    </span>
                   </button>
                 ))}
               </div>
+
               <button
                 onClick={() => setShowTeamSelect(false)}
-                className="mt-4 w-full rounded-lg py-3 font-body text-lg text-muted-foreground transition-colors hover:bg-muted"
+                className="mt-6 w-full rounded-xl border border-border bg-muted/30 py-2.5 font-display text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground"
               >
                 Cancel
               </button>
